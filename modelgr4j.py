@@ -12,13 +12,13 @@ P = 0
 E = 0
 P_n = 0.00
 E_n = 0.00
-S = 0
-R = 0 
 x_1 = 0
 x_2 = 0
 x_3 = 0
 x_4 = 0
 
+S = 0
+R = 0 
 
 
 if P >= E:
@@ -45,6 +45,33 @@ S = S - Perc
 
 # Equation 8: routing equation
 P_r = Perc + (P_n - P_s)
+
+def UH1(x_4):
+    SH1 = []
+    SH2 = []
+    UH1 = [0]
+    UH2 = [0]
+    dt1 = 0.5
+
+    for t in range(0,(x_4+2*dt1), dt1):
+        if t <= 0:
+            SH1.append([t,0])
+        elif t > 0 and t < x_4:
+            SH1.append([t, (t/x_4)**(5/2)])  
+        else:
+            SH1.append([t, 1])
+    
+    for t in range(0,(2*x_4+2*dt1), dt1):
+        if t <= 0:
+            SH2.append([t,0]) 
+        elif t > 0 and t <= x_4:
+            SH2.append([t, 0.5*(t/x_4)**(5/2)])
+        elif t > x_4 and t <= 2*x_4:
+            SH2.append([t, 1-(0.5*(2-(t/x_4))**(5/2))]) 
+        else:
+            SH2.append([t,1])
+
+# for the range van sh1 en sh2 UH1 en UH2 bepalen
 
 # Equation 9 - 15:
 # SH1
