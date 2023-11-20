@@ -79,30 +79,6 @@ S = S - Perc
 # Equation 8: routing equation
 P_r = Perc + (P_n - P_s)
 
-# for the range van sh1 en sh2 UH1 en UH2 bepalen
-
-# Equation 9 - 15:
-# SH1
-if t <= 0:
-    SH1 = 0
-elif t > 0 and t < x_4:
-    SH1 = (t/x_4)**(5/2)
-else:
-    SH1 = 1
-
-# SH2
-if t <= 0:
-    SH2 = 0
-elif t > 0 and t <= x_4:
-    SH2 = 0.5*(t/x_4)**(5/2)
-elif t > x_4 and t <= 2*x_4:
-    SH2 = 1-(0.5*(2-(t/x_4))**(5/2))
-else:
-    SH2 = 1
-
-# # Unit hydrograph determination
-
-# UH2(j) = SH2(j) - SH2(j-1)
 
 # Q_1 = 0.1 * P_r * UH1(j)
 # Q_9 = 0.9 * P_r * UH2(j)
