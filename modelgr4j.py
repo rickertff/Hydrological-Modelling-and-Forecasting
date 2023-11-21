@@ -8,11 +8,11 @@ import pandas as pd
 t = 0
 dt = 1
 
-P = 0
-E = 0
+P = 2.8
+E = 0.4
 P_n = 0.00
 E_n = 0.00
-x_1 = 3.5
+x_1 = 0.7
 x_2 = 4.0
 x_3 = 5.0
 x_4 = 5
@@ -54,6 +54,9 @@ def fun_UH2(x_4):
     
 UH1 = fun_UH1(x_4)
 UH2 = fun_UH2(x_4)
+
+
+
 if P >= E:
     P_n = P - E
     E_n = 0.00
@@ -98,7 +101,7 @@ P_r = Perc + (P_n - P_s)
 
 # Q = Q_r + Q_d
 
-
+print(Perc)
 
 
 
