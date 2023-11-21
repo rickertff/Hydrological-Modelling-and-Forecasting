@@ -7,24 +7,19 @@ import pandas as pd
 
 t = 0
 dt = 1
-
-P = 2.8
-E = 0.4
-P_n = 0.00
-E_n = 0.00
-x_1 = 0.7
+x_1 = 350
 x_2 = 4.0
 x_3 = 5.0
 x_4 = 5
 S = 0
 R = 0 
 
+path = "Observed time series 1968-1982.xlsx"
+precipitation = pd.read_excel(path, 0)
+evapotranspiration = pd.read_excel(path, 1)
+discharge = pd.read_excel(path, 2)
 
-precipitation = pd.read_excel("C:\\Users\\pc-ri\\Documents\\Uni\\18 - Q6 TEM\\Hydrological Modelling and Forecasting\\Assignments\\Hydrological-Modelling-and-Forecasting\\Observed time series 1968-1982.xlsx", 0)
-evapotranspiration = pd.read_excel("C:\\Users\\pc-ri\\Documents\\Uni\\18 - Q6 TEM\\Hydrological Modelling and Forecasting\\Assignments\\Hydrological-Modelling-and-Forecasting\\Observed time series 1968-1982.xlsx", 1)
-discharge = pd.read_excel("C:\\Users\\pc-ri\\Documents\\Uni\\18 - Q6 TEM\\Hydrological Modelling and Forecasting\\Assignments\\Hydrological-Modelling-and-Forecasting\\Observed time series 1968-1982.xlsx", 2)
-
-def update_timestep(t, P, E, P_n, E_n, S, x_1, x_2, x_3, x_4):
+def update_timestep(t, P, E, R, S, x_1, x_2, x_3, x_4):
     """
     This function calculates the new water balance according to the equations.
     """
@@ -53,6 +48,7 @@ def update_timestep(t, P, E, P_n, E_n, S, x_1, x_2, x_3, x_4):
     # Equation 8: routing equation
     P_r = Perc + (P_n - P_s)
 
+    print(Perc)
 def fun_UH1(x_4):
     SH1 = []
     UH1 = [0.0]
@@ -88,10 +84,13 @@ def fun_UH2(x_4):
 UH1 = fun_UH1(x_4)
 UH2 = fun_UH2(x_4)
 
+#
+# Main
+#
 
 for t in range(len(precipitation)-2):
     P = precipitation.iat[t+2, 5]
     E = evapotranspiration.iat[t+2, 5]
-    update_timestep(t, P, E, P_n, E_n, S, x_1, x_2, x_3, x_4)
+    update_timestep(t, P, E, R, S, x_1, x_2, x_3, x_4)
 
 
