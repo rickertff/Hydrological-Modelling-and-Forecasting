@@ -5,6 +5,7 @@
 import numpy as np
 import pandas as pd
 import os
+import matplotlib.pyplot as plt
 
 t = 0
 dt = 1
@@ -15,14 +16,25 @@ x_4 = 5
 S = 0
 R = 0 
 
+area = 1311
+
 path = os.path.join(os.path.dirname(__file__), "Observed time series 1968-1982.xlsx")
 precipitation = pd.read_excel(path, 0, header=2)
 precip_lesse = precipitation["Lesse"]
+#for i in range(len(precip_lesse)):
+#    precip_lesse[i] = 983/365
+precip_lesse = precip_lesse * area * 1000
+precip_total_9 = np.zeros(len(precip_lesse)+12)
+precip_total_1 = np.zeros(len(precip_lesse)+12)
+
 evapotranspiration = pd.read_excel(path, 1, header=2)
 evap_lesse = evapotranspiration["Lesse"]
-discharge = pd.read_excel(path, 2)
 
-def update_timestep(t, P, E, R, S, x_1, x_2, x_3, x_4):
+discharge = pd.read_excel(path, 2, header=2)
+discharge_lesse = discharge["Lesse"]
+total_discharge = np.zeros(len(precip_lesse))
+
+def update_timestep(t, P, E, R, S, x_1, x_2, x_3, UH1, UH2):
     """
     This function calculates the new water balance according to the equations.
     """
@@ -51,29 +63,34 @@ def update_timestep(t, P, E, R, S, x_1, x_2, x_3, x_4):
     # Equation 8: routing equation
     P_r = Perc + (P_n - P_s)
 
-    Q_1 = 0.1 * P_r * UH1
-    Q_9 = 0.9 * P_r * UH2
+    for j in range(len(UH1)):
+        Q_1[t, t+j] = 0.1 * P_r * UH1[j]
+    for j in range(len(UH2)):
+        Q_9[t, t+j] = 0.9 * P_r * UH2[j]
 
-    # F = x_2*(R/x_3)**(7/2)
+    F = x_2*(R/x_3)**(7/2)
 
-    # R = max((R + Q_9 + F),0)
+    precip_total_9[t] = sum(Q_9[:,t])
+    precip_total_1[t] = sum(Q_1[:,t])
 
-    # Q_r = R*(1-(1+(R/x_3)**4)**(-1/4))
-    # if Q_r < R:
-    #     R = R - Q_r
-    # else:
-    #     print("Hehe dit gaat fout")
-    #     exit
+    R = max((R + precip_total_9[t] + F),0)
 
-    # Q_d = max((Q_1 + F), 0)
+    Q_r = R*(1-(1+(R/x_3)**4)**(-1/4))
+    if Q_r < R:
+        R = R - Q_r
+    else:
+        print("Hehe dit gaat fout")
+        exit
 
-    # Q = Q_r + Q_d
+    Q_d = max((precip_total_1[t] + F), 0)
 
+    Q = Q_r + Q_d
+    
+    return R, S, Q
 
-    print(Perc)
 def fun_UH1(x_4):
     SH1 = []
-    UH1 = [0.0]
+    UH1 = []
     dt1 = 1
     for t in np.arange(0.0, (x_4+2*dt1), dt1):
         if t <= 0:
@@ -88,7 +105,7 @@ def fun_UH1(x_4):
 
 def fun_UH2(x_4):
     SH2 = []
-    UH2 = [0.0]
+    UH2 = []
     dt1 = 1
     for t in np.arange(0,(2*x_4+2*dt1), dt1):
         if t <= 0:
@@ -106,13 +123,22 @@ def fun_UH2(x_4):
 UH1 = fun_UH1(x_4)
 UH2 = fun_UH2(x_4)
 
+Q_1 = np.zeros([len(precip_lesse), len(precip_lesse)+12])
+Q_9 = np.zeros([len(precip_lesse), len(precip_lesse)+12])
+
 #
 # Main
 #
 
-for t in range(len(precipitation)-2):
+for t in range(len(precip_lesse)-2):
     P = precip_lesse.iat[t]
     E = evap_lesse.iat[t]
-    update_timestep(t, P, E, R, S, x_1, x_2, x_3, x_4)
+    [R, S, Q] = update_timestep(t, P, E, R, S, x_1, x_2, x_3, UH1, UH2)
 
+    total_discharge[t] = Q / 86400
+    #print(total_discharge[t])
 
+plt.plot(discharge_lesse)
+plt.plot(total_discharge)
+plt.ylabel("Discharge (m^3/s)")
+plt.show()
