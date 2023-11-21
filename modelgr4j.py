@@ -4,6 +4,7 @@
 
 import numpy as np
 import pandas as pd
+import os
 
 t = 0
 dt = 1
@@ -14,9 +15,11 @@ x_4 = 5
 S = 0
 R = 0 
 
-path = "Observed time series 1968-1982.xlsx"
-precipitation = pd.read_excel(path, 0)
-evapotranspiration = pd.read_excel(path, 1)
+path = os.path.join(os.path.dirname(__file__), "Observed time series 1968-1982.xlsx")
+precipitation = pd.read_excel(path, 0, header=2)
+precip_lesse = precipitation["Lesse"]
+evapotranspiration = pd.read_excel(path, 1, header=2)
+evap_lesse = evapotranspiration["Lesse"]
 discharge = pd.read_excel(path, 2)
 
 def update_timestep(t, P, E, R, S, x_1, x_2, x_3, x_4):
@@ -89,8 +92,8 @@ UH2 = fun_UH2(x_4)
 #
 
 for t in range(len(precipitation)-2):
-    P = precipitation.iat[t+2, 5]
-    E = evapotranspiration.iat[t+2, 5]
+    P = precip_lesse.iat[t]
+    E = evap_lesse.iat[t]
     update_timestep(t, P, E, R, S, x_1, x_2, x_3, x_4)
 
 
