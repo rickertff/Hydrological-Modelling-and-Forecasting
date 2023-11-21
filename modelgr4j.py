@@ -51,6 +51,25 @@ def update_timestep(t, P, E, R, S, x_1, x_2, x_3, x_4):
     # Equation 8: routing equation
     P_r = Perc + (P_n - P_s)
 
+    Q_1 = 0.1 * P_r * UH1
+    Q_9 = 0.9 * P_r * UH2
+
+    # F = x_2*(R/x_3)**(7/2)
+
+    # R = max((R + Q_9 + F),0)
+
+    # Q_r = R*(1-(1+(R/x_3)**4)**(-1/4))
+    # if Q_r < R:
+    #     R = R - Q_r
+    # else:
+    #     print("Hehe dit gaat fout")
+    #     exit
+
+    # Q_d = max((Q_1 + F), 0)
+
+    # Q = Q_r + Q_d
+
+
     print(Perc)
 def fun_UH1(x_4):
     SH1 = []
