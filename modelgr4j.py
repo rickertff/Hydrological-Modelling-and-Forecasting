@@ -255,10 +255,10 @@ if sens_analysis:
     np.savetxt("KGE_Values.txt", KGE_values)
     for i in range(4):
         plt.plot(KGE_values[i,:])
-        plt.ylabel("KGE Value")
-        plt.xlabel("Parameter value")
-        plt.legend("X1", "X2", "X3", "X4")
-        plt.title("Sensitivity of model to KGE values")
+    plt.ylabel("KGE Value")
+    plt.xlabel("Parameter value")
+    plt.legend(["X1", "X2", "X3", "X4"])
+    plt.title("Sensitivity of model to KGE values")
     #for j in range(len(sensx3)):
         #plt.plot(total_discharge3[j,:])
         #plt.ylabel("Discharge (m^3/s)")
