@@ -97,6 +97,32 @@ def fun_UH2(x_4):
        UH2.append(SH2[j][1] - SH2[(j-1)][1]) 
     return UH2
 
+def KGE(Qmodel, Qreal):
+    r = 1
+    a = np.std(Qmodel) / np.std(Qreal)
+    b = np.mean(Qmodel) / np.mean(Qreal)
+
+    KGE_value = 1 - np.sqrt((r-1)**2 + (a-1)**2 + (b-1)**2)
+
+    return KGE_value
+
+def NSE(Qmodel, Qreal):
+    part1 = 0
+    part2 = 0
+    for i in range(len(Qmodel)):
+        part1 += (Qmodel[i] - Qreal[i])**2
+        part2 += (Qreal[i] - np.mean(Qreal))**2
+    
+    NSE_value = 1 - part1 / part2
+
+    return NSE_value
+
+def RVE(Qmodel, Qreal):
+
+    RVE_value = 0
+
+    return RVE_value
+
 #
 # Init
 #
@@ -205,8 +231,6 @@ else:
 
 if sens_analysis:
     for j in range(len(sensx3)):
-        print(np.mean(total_discharge3[j,:]))
-        print(np.max(total_discharge3[j,:]))
         plt.plot(total_discharge3[j,:])
 else:
     plt.plot(discharge_lesse)
