@@ -7,32 +7,9 @@ import pandas as pd
 import os
 import matplotlib.pyplot as plt
 
-t = 0
-dt = 1
-x_1 = 350
-x_2 = 4.0
-x_3 = 5.0
-x_4 = 5
-S = 0
-R = 0 
-
-area = 1311
-
-path = os.path.join(os.path.dirname(__file__), "Observed time series 1968-1982.xlsx")
-precipitation = pd.read_excel(path, 0, header=2)
-precip_lesse = precipitation["Lesse"]
-#for i in range(len(precip_lesse)):
-#    precip_lesse[i] = 983/365
-precip_lesse = precip_lesse * area * 1000
-precip_total_9 = np.zeros(len(precip_lesse)+12)
-precip_total_1 = np.zeros(len(precip_lesse)+12)
-
-evapotranspiration = pd.read_excel(path, 1, header=2)
-evap_lesse = evapotranspiration["Lesse"]
-
-discharge = pd.read_excel(path, 2, header=2)
-discharge_lesse = discharge["Lesse"]
-total_discharge = np.zeros(len(precip_lesse))
+#
+# Functions
+#
 
 def update_timestep(t, P, E, R, S, x_1, x_2, x_3, UH1, UH2):
     """
@@ -119,7 +96,45 @@ def fun_UH2(x_4):
     for j in range(1,len(SH2),1):
        UH2.append(SH2[j][1] - SH2[(j-1)][1]) 
     return UH2
-    
+
+#
+# Init
+#
+
+t = 0
+dt = 1
+x_1 = 350
+x_2 = 0
+x_3 = 90
+x_4 = 1.7
+S = 0
+R = 0
+
+area = 1311
+
+path = os.path.join(os.path.dirname(__file__), "Observed time series 1968-1982.xlsx")
+precipitation = pd.read_excel(path, 0, header=2)
+precip_lesse = precipitation["Lesse"]
+# Constant precipitation
+#precip_lesse = np.zeros(len(precipitation))
+#for i in range(100):
+#    precip_lesse[i] = 983/365
+precip_lesse = precip_lesse * area * 1000
+precip_total_9 = np.zeros(len(precip_lesse)+12)
+precip_total_1 = np.zeros(len(precip_lesse)+12)
+
+evapotranspiration = pd.read_excel(path, 1, header=2)
+evap_lesse = evapotranspiration["Lesse"]
+#evap_lesse = np.zeros(len(evapotranspiration))
+
+discharge = pd.read_excel(path, 2, header=2)
+discharge_lesse = discharge["Lesse"]
+total_discharge = np.zeros(len(precip_lesse))
+
+#
+# Calculate Unit Hydrographs
+#
+
 UH1 = fun_UH1(x_4)
 UH2 = fun_UH2(x_4)
 
@@ -130,13 +145,12 @@ Q_9 = np.zeros([len(precip_lesse), len(precip_lesse)+12])
 # Main
 #
 
-for t in range(len(precip_lesse)-2):
+for t in range(len(precip_lesse)):
     P = precip_lesse.iat[t]
     E = evap_lesse.iat[t]
     [R, S, Q] = update_timestep(t, P, E, R, S, x_1, x_2, x_3, UH1, UH2)
 
     total_discharge[t] = Q / 86400
-    #print(total_discharge[t])
 
 plt.plot(discharge_lesse)
 plt.plot(total_discharge)
