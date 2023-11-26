@@ -97,27 +97,28 @@ def fun_UH2(x_4):
        UH2.append(SH2[j][1] - SH2[(j-1)][1]) 
     return UH2
 
-def KGE(Qmodel, Qreal):
+def KGE(Qmodel, Qreal, warmup):
     r = 1
-    a = np.std(Qmodel) / np.std(Qreal)
-    b = np.mean(Qmodel) / np.mean(Qreal)
+    a = np.std(Qmodel[warmup:]) / np.std(Qreal[warmup:])
+    b = np.mean(Qmodel[warmup:]) / np.mean(Qreal[warmup:])
 
     KGE_value = 1 - np.sqrt((r-1)**2 + (a-1)**2 + (b-1)**2)
 
     return KGE_value
 
-def NSE(Qmodel, Qreal):
+def NSE(Qmodel, Qreal, warmup):
     part1 = 0
     part2 = 0
     for i in range(len(Qmodel)):
-        part1 += (Qmodel[i] - Qreal[i])**2
-        part2 += (Qreal[i] - np.mean(Qreal))**2
+        if i > warmup:
+            part1 += (Qmodel[i] - Qreal[i])**2
+            part2 += (Qreal[i] - np.mean(Qreal))**2
     
     NSE_value = 1 - part1 / part2
 
     return NSE_value
 
-def RVE(Qmodel, Qreal):
+def RVE(Qmodel, Qreal, warmup):
 
     RVE_value = 0
 
@@ -128,7 +129,7 @@ def RVE(Qmodel, Qreal):
 #
 
 sens_analysis = True
-sens_length = 300
+warmup = 365
 
 t = 0
 dt = 1
@@ -146,28 +147,30 @@ R = 0
 area = 1311
 
 path = os.path.join(os.path.dirname(__file__), "Observed time series 1968-1982.xlsx")
-#precipitation = pd.read_excel(path, 0, header=2)
-#precip_lesse = precipitation["Lesse"]
+precipitation = pd.read_excel(path, 0, header=2)
+precip_lesse = precipitation["Lesse"]
 # Constant precipitation
-precip_lesse = np.zeros(sens_length)
-for i in range(100):
-    precip_lesse[i] = 8
+#precip_lesse = np.zeros(sens_length)
+#for i in range(100):
+#    precip_lesse[i] = 8
 precip_total_9 = np.zeros(len(precip_lesse)+12)
 precip_total_1 = np.zeros(len(precip_lesse)+12)
 
-#evapotranspiration = pd.read_excel(path, 1, header=2)
-#evap_lesse = evapotranspiration["Lesse"]
-evap_lesse = np.zeros(sens_length)
-for i in range(100):
-    evap_lesse[i] = 2
+evapotranspiration = pd.read_excel(path, 1, header=2)
+evap_lesse = evapotranspiration["Lesse"]
+#evap_lesse = np.zeros(sens_length)
+#for i in range(100):
+#    evap_lesse[i] = 2
 
 discharge = pd.read_excel(path, 2, header=2)
 discharge_lesse = discharge["Lesse"]
+sens_length = len(precip_lesse)
 total_discharge = np.zeros(len(precip_lesse))
 total_discharge1 = np.zeros([7, sens_length])
 total_discharge2 = np.zeros([7, sens_length])
 total_discharge3 = np.zeros([7, sens_length])
 total_discharge4 = np.zeros([7, sens_length])
+KGE_values = np.zeros([4, 7])
 
 #
 # Calculate Unit Hydrographs
@@ -183,40 +186,59 @@ Q_9 = np.zeros([len(precip_lesse), len(precip_lesse)+12])
 if sens_analysis:
     for i in range(len(sensx1)):
         x_1 = sensx1[i]
+        x_2 = 0
+        x_3 = 90
+        x_4 = 1.7
         UH1 = fun_UH1(x_4)
         UH2 = fun_UH2(x_4)
         for t in range(sens_length):
-            P = precip_lesse[t]
-            E = evap_lesse[t]
+            P = precip_lesse.iat[t]
+            E = evap_lesse.iat[t]
             [R, S, Q] = update_timestep(t, P, E, R, S, x_1, x_2, x_3, UH1, UH2)
             total_discharge1[i, t] = Q / 86400 * area * 1000
+            KGE_values[0, i] = KGE(total_discharge1[i,:], discharge_lesse, warmup)
+            
     for i in range(len(sensx2)):
+        x_1 = 350
         x_2 = sensx2[i]
+        x_3 = 90
+        x_4 = 1.7
         UH1 = fun_UH1(x_4)
         UH2 = fun_UH2(x_4)
         for t in range(sens_length):
-            P = precip_lesse[t]
-            E = evap_lesse[t]
+            P = precip_lesse.iat[t]
+            E = evap_lesse.iat[t]
             [R, S, Q] = update_timestep(t, P, E, R, S, x_1, x_2, x_3, UH1, UH2)
             total_discharge2[i, t] = Q / 86400 * area * 1000
+            KGE_values[1, i] = KGE(total_discharge2[i,:], discharge_lesse, warmup)
+
     for i in range(len(sensx3)):
+        x_1 = 350
+        x_2 = 0
         x_3 = sensx3[i]
+        x_4 = 1.7
         UH1 = fun_UH1(x_4)
         UH2 = fun_UH2(x_4)
         for t in range(sens_length):
-            P = precip_lesse[t]
-            E = evap_lesse[t]
+            P = precip_lesse.iat[t]
+            E = evap_lesse.iat[t]
             [R, S, Q] = update_timestep(t, P, E, R, S, x_1, x_2, x_3, UH1, UH2)
             total_discharge3[i, t] = Q / 86400 * area * 1000
+            KGE_values[2, i] = KGE(total_discharge3[i,:], discharge_lesse, warmup)
+
     for i in range(len(sensx4)):
+        x_1 = 350
+        x_2 = 0
+        x_3 = 90
         x_4 = sensx4[i]
         UH1 = fun_UH1(x_4)
         UH2 = fun_UH2(x_4)
         for t in range(sens_length):
-            P = precip_lesse[t]
-            E = evap_lesse[t]
+            P = precip_lesse.iat[t]
+            E = evap_lesse.iat[t]
             [R, S, Q] = update_timestep(t, P, E, R, S, x_1, x_2, x_3, UH1, UH2)
             total_discharge4[i, t] = Q / 86400 * area * 1000
+            KGE_values[3, i] = KGE(total_discharge4[i,:], discharge_lesse, warmup)
         
 
 else:
@@ -230,11 +252,20 @@ else:
         total_discharge[t] = Q / 86400 * area * 1000
 
 if sens_analysis:
-    for j in range(len(sensx3)):
-        plt.plot(total_discharge3[j,:])
+    np.savetxt("KGE_Values.txt", KGE_values)
+    for i in range(4):
+        plt.plot(KGE_values[i,:])
+        plt.ylabel("KGE Value")
+        plt.xlabel("Parameter value")
+        plt.legend("X1", "X2", "X3", "X4")
+        plt.title("Sensitivity of model to KGE values")
+    #for j in range(len(sensx3)):
+        #plt.plot(total_discharge3[j,:])
+        #plt.ylabel("Discharge (m^3/s)")
+        #plt.xlabel("Time (Days)")
 else:
     plt.plot(discharge_lesse)
     plt.plot(total_discharge)
-plt.ylabel("Discharge (m^3/s)")
-plt.xlabel("Time (Days)")
+    plt.ylabel("Discharge (m^3/s)")
+    plt.xlabel("Time (Days)")
 plt.show()
