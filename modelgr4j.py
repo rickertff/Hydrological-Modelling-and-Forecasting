@@ -119,12 +119,13 @@ precip_lesse = precipitation["Lesse"]
 #precip_lesse = np.zeros(len(precipitation))
 #for i in range(100):
 #    precip_lesse[i] = 983/365
-precip_lesse = precip_lesse * area * 1000
+precip_lesse *= area * 1000
 precip_total_9 = np.zeros(len(precip_lesse)+12)
 precip_total_1 = np.zeros(len(precip_lesse)+12)
 
 evapotranspiration = pd.read_excel(path, 1, header=2)
 evap_lesse = evapotranspiration["Lesse"]
+evap_lesse *= area * 1000
 #evap_lesse = np.zeros(len(evapotranspiration))
 
 discharge = pd.read_excel(path, 2, header=2)
@@ -151,6 +152,11 @@ for t in range(len(precip_lesse)):
     [R, S, Q] = update_timestep(t, P, E, R, S, x_1, x_2, x_3, UH1, UH2)
 
     total_discharge[t] = Q / 86400
+
+summodel = sum(total_discharge)
+print(summodel)
+sumreal = sum(discharge_lesse)
+print(sumreal)
 
 plt.plot(discharge_lesse)
 plt.plot(total_discharge)
