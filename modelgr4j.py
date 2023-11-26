@@ -101,43 +101,51 @@ def fun_UH2(x_4):
 # Init
 #
 
+sens_analysis = True
+sens_length = 300
+
 t = 0
 dt = 1
 x_1 = 350
+sensx1 = [100, 183, 266, 350, 633, 916, 1200]
 x_2 = 0
+sensx2 = [-5, -3.3, -1.6, 0, 1, 2, 3]
 x_3 = 90
+sensx3 = [20, 43, 67, 90, 160, 230, 300]
 x_4 = 1.7
+sensx4 = [1.1, 1.3, 1.5, 1.7, 2.1, 2.5, 2.9]
 S = 0
 R = 0
 
 area = 1311
 
 path = os.path.join(os.path.dirname(__file__), "Observed time series 1968-1982.xlsx")
-precipitation = pd.read_excel(path, 0, header=2)
-precip_lesse = precipitation["Lesse"]
+#precipitation = pd.read_excel(path, 0, header=2)
+#precip_lesse = precipitation["Lesse"]
 # Constant precipitation
-#precip_lesse = np.zeros(len(precipitation))
-#for i in range(100):
-#    precip_lesse[i] = 983/365
-precip_lesse *= area * 1000
+precip_lesse = np.zeros(sens_length)
+for i in range(100):
+    precip_lesse[i] = 8
 precip_total_9 = np.zeros(len(precip_lesse)+12)
 precip_total_1 = np.zeros(len(precip_lesse)+12)
 
-evapotranspiration = pd.read_excel(path, 1, header=2)
-evap_lesse = evapotranspiration["Lesse"]
-evap_lesse *= area * 1000
-#evap_lesse = np.zeros(len(evapotranspiration))
+#evapotranspiration = pd.read_excel(path, 1, header=2)
+#evap_lesse = evapotranspiration["Lesse"]
+evap_lesse = np.zeros(sens_length)
+for i in range(100):
+    evap_lesse[i] = 2
 
 discharge = pd.read_excel(path, 2, header=2)
 discharge_lesse = discharge["Lesse"]
 total_discharge = np.zeros(len(precip_lesse))
+total_discharge1 = np.zeros([7, sens_length])
+total_discharge2 = np.zeros([7, sens_length])
+total_discharge3 = np.zeros([7, sens_length])
+total_discharge4 = np.zeros([7, sens_length])
 
 #
 # Calculate Unit Hydrographs
 #
-
-UH1 = fun_UH1(x_4)
-UH2 = fun_UH2(x_4)
 
 Q_1 = np.zeros([len(precip_lesse), len(precip_lesse)+12])
 Q_9 = np.zeros([len(precip_lesse), len(precip_lesse)+12])
@@ -146,19 +154,63 @@ Q_9 = np.zeros([len(precip_lesse), len(precip_lesse)+12])
 # Main
 #
 
-for t in range(len(precip_lesse)):
-    P = precip_lesse.iat[t]
-    E = evap_lesse.iat[t]
-    [R, S, Q] = update_timestep(t, P, E, R, S, x_1, x_2, x_3, UH1, UH2)
+if sens_analysis:
+    for i in range(len(sensx1)):
+        x_1 = sensx1[i]
+        UH1 = fun_UH1(x_4)
+        UH2 = fun_UH2(x_4)
+        for t in range(sens_length):
+            P = precip_lesse[t]
+            E = evap_lesse[t]
+            [R, S, Q] = update_timestep(t, P, E, R, S, x_1, x_2, x_3, UH1, UH2)
+            total_discharge1[i, t] = Q / 86400 * area * 1000
+    for i in range(len(sensx2)):
+        x_2 = sensx2[i]
+        UH1 = fun_UH1(x_4)
+        UH2 = fun_UH2(x_4)
+        for t in range(sens_length):
+            P = precip_lesse[t]
+            E = evap_lesse[t]
+            [R, S, Q] = update_timestep(t, P, E, R, S, x_1, x_2, x_3, UH1, UH2)
+            total_discharge2[i, t] = Q / 86400 * area * 1000
+    for i in range(len(sensx3)):
+        x_3 = sensx3[i]
+        UH1 = fun_UH1(x_4)
+        UH2 = fun_UH2(x_4)
+        for t in range(sens_length):
+            P = precip_lesse[t]
+            E = evap_lesse[t]
+            [R, S, Q] = update_timestep(t, P, E, R, S, x_1, x_2, x_3, UH1, UH2)
+            total_discharge3[i, t] = Q / 86400 * area * 1000
+    for i in range(len(sensx4)):
+        x_4 = sensx4[i]
+        UH1 = fun_UH1(x_4)
+        UH2 = fun_UH2(x_4)
+        for t in range(sens_length):
+            P = precip_lesse[t]
+            E = evap_lesse[t]
+            [R, S, Q] = update_timestep(t, P, E, R, S, x_1, x_2, x_3, UH1, UH2)
+            total_discharge4[i, t] = Q / 86400 * area * 1000
+        
 
-    total_discharge[t] = Q / 86400
+else:
+    UH1 = fun_UH1(x_4)
+    UH2 = fun_UH2(x_4)
+    for t in range(len(precip_lesse)):
+        P = precip_lesse.iat[t]
+        E = evap_lesse.iat[t]
+        [R, S, Q] = update_timestep(t, P, E, R, S, x_1, x_2, x_3, UH1, UH2)
 
-summodel = sum(total_discharge)
-print(summodel)
-sumreal = sum(discharge_lesse)
-print(sumreal)
+        total_discharge[t] = Q / 86400 * area * 1000
 
-plt.plot(discharge_lesse)
-plt.plot(total_discharge)
+if sens_analysis:
+    for j in range(len(sensx3)):
+        print(np.mean(total_discharge3[j,:]))
+        print(np.max(total_discharge3[j,:]))
+        plt.plot(total_discharge3[j,:])
+else:
+    plt.plot(discharge_lesse)
+    plt.plot(total_discharge)
 plt.ylabel("Discharge (m^3/s)")
+plt.xlabel("Time (Days)")
 plt.show()
