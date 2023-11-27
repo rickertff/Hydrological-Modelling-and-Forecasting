@@ -6,6 +6,8 @@ import numpy as np
 import pandas as pd
 import os
 import matplotlib.pyplot as plt
+import random as rd
+import scipy.stats as ss
 
 #
 # Functions
@@ -57,7 +59,8 @@ def update_timestep(t, P, E, R, S, x_1, x_2, x_3, UH1, UH2):
         R = R - Q_r
     else:
         print("Hehe dit gaat fout")
-        exit
+        fout = True
+        return 0, 0, 0
 
     Q_d = max((precip_total_1[t] + F), 0)
 
@@ -98,11 +101,11 @@ def fun_UH2(x_4):
     return UH2
 
 def KGE(Qmodel, Qreal, warmup):
-    r = 1
+    r = ss.pearsonr(Qmodel[warmup:], Qreal[warmup:])
     a = np.std(Qmodel[warmup:]) / np.std(Qreal[warmup:])
     b = np.mean(Qmodel[warmup:]) / np.mean(Qreal[warmup:])
 
-    KGE_value = 1 - np.sqrt((r-1)**2 + (a-1)**2 + (b-1)**2)
+    KGE_value = 1 - np.sqrt((r[0]-1)**2 + (a-1)**2 + (b-1)**2)
 
     return KGE_value
 
@@ -120,7 +123,7 @@ def NSE(Qmodel, Qreal, warmup):
 
 def RVE(Qmodel, Qreal, warmup):
 
-    RVE_value = 0
+    RVE_value = ((sum(Qmodel[warmup:]) - sum(Qreal[warmup:])) / sum(Qreal[warmup:])) * 100
 
     return RVE_value
 
@@ -128,8 +131,10 @@ def RVE(Qmodel, Qreal, warmup):
 # Init
 #
 
-sens_analysis = True
+sens_analysis = False
+calibration = False
 warmup = 365
+fout = False
 
 t = 0
 dt = 1
@@ -239,7 +244,75 @@ if sens_analysis:
             [R, S, Q] = update_timestep(t, P, E, R, S, x_1, x_2, x_3, UH1, UH2)
             total_discharge4[i, t] = Q / 86400 * area * 1000
             KGE_values[3, i] = KGE(total_discharge4[i,:], discharge_lesse, warmup)
+
+elif calibration:
+    bestKGE = 0.7
+    bestx1 = 248
+    bestx2 = -1.21
+    bestx3 = 71
+    bestx4 = 2.19
+    rd.seed(0)
+
+    for k in range(100):
+        randpar = rd.randint(1,4)
+        if randpar == 1:
+            x_1 = rd.normalvariate(bestx1, 50)
+            while x_1 < 100:
+                x_1 = rd.normalvariate(bestx1, 50)
+        elif randpar == 2:
+            x_2 = rd.normalvariate(bestx2, 0.5)
+        elif randpar == 3:
+            x_3 = rd.normalvariate(bestx3, 10)
+        else:
+            x_4 = rd.normalvariate(bestx4, 0.5)
+        second = rd.randint(0,1)
+        if second == 1:
+            randpar2 = rd.randint(1,4)
+            while randpar2 == randpar:
+                randpar2 = rd.randint(1,4)
+            if randpar2 == 1:
+                x_1 = rd.normalvariate(bestx1, 50)
+                while x_1 < 100:
+                    x_1 = rd.normalvariate(bestx1, 50)
+            elif randpar2 == 2:
+                x_2 = rd.normalvariate(bestx2, 0.5)
+            elif randpar2 == 3:
+                x_3 = rd.normalvariate(bestx3, 10)
+            else:
+                x_4 = rd.normalvariate(bestx4, 0.5)
         
+        UH1 = fun_UH1(x_4)
+        UH2 = fun_UH2(x_4)
+        for t in range(len(precip_lesse)):
+            if not fout:
+                P = precip_lesse.iat[t]
+                E = evap_lesse.iat[t]
+                [R, S, Q] = update_timestep(t, P, E, R, S, x_1, x_2, x_3, UH1, UH2)
+                total_discharge[t] = Q / 86400 * area * 1000
+            else:
+                break
+        if not fout:
+            KGE_value = KGE(total_discharge, discharge_lesse, warmup)
+            RVE_value = RVE(total_discharge, discharge_lesse, warmup)
+            if KGE_value > bestKGE and abs(RVE_value) < 5:
+                bestKGE = KGE_value
+                bestRVE = RVE_value
+                bestx1 = x_1
+                bestx2 = x_2
+                bestx3 = x_3
+                bestx4 = x_4
+                bestdischarge = total_discharge
+        else:
+            fout = False
+    NSE_value = NSE(total_discharge, discharge_lesse, warmup)
+    print(bestKGE)
+    print(bestRVE)
+    print(NSE_value)
+    print(bestx1)
+    print(bestx2)
+    print(bestx3)
+    print(bestx4)
+    np.savetxt("Calibrated discharge.txt", bestdischarge)
 
 else:
     UH1 = fun_UH1(x_4)
@@ -248,8 +321,13 @@ else:
         P = precip_lesse.iat[t]
         E = evap_lesse.iat[t]
         [R, S, Q] = update_timestep(t, P, E, R, S, x_1, x_2, x_3, UH1, UH2)
-
         total_discharge[t] = Q / 86400 * area * 1000
+    KGE_value = KGE(total_discharge, discharge_lesse, warmup)
+    RVE_value = RVE(total_discharge, discharge_lesse, warmup)
+    NSE_value = NSE(total_discharge, discharge_lesse, warmup)
+    print(KGE_value)
+    print(RVE_value)
+    print(NSE_value)
 
 if sens_analysis:
     np.savetxt("KGE_Values.txt", KGE_values)
@@ -263,9 +341,16 @@ if sens_analysis:
         #plt.plot(total_discharge3[j,:])
         #plt.ylabel("Discharge (m^3/s)")
         #plt.xlabel("Time (Days)")
+elif calibration:
+    plt.plot(discharge_lesse)
+    plt.plot(bestdischarge)
+    plt.ylabel("Discharge (m^3/s)")
+    plt.xlabel("Time (Days)")
+    plt.legend(["Measured", "Simulated"])
 else:
     plt.plot(discharge_lesse)
     plt.plot(total_discharge)
     plt.ylabel("Discharge (m^3/s)")
     plt.xlabel("Time (Days)")
+    plt.legend(["Measured", "Simulated"])
 plt.show()
