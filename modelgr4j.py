@@ -134,6 +134,7 @@ def RVE(Qmodel, Qreal, warmup):
 sens_analysis = False
 calibration = False
 warmup = 365
+verif_length = 500
 fout = False
 
 t = 0
@@ -155,7 +156,7 @@ path = os.path.join(os.path.dirname(__file__), "Observed time series 1968-1982.x
 precipitation = pd.read_excel(path, 0, header=2)
 precip_lesse = precipitation["Lesse"]
 # Constant precipitation
-#precip_lesse = np.zeros(sens_length)
+#precip_lesse = np.zeros(verif_length)
 #for i in range(100):
 #    precip_lesse[i] = 8
 precip_total_9 = np.zeros(len(precip_lesse)+12)
@@ -163,9 +164,7 @@ precip_total_1 = np.zeros(len(precip_lesse)+12)
 
 evapotranspiration = pd.read_excel(path, 1, header=2)
 evap_lesse = evapotranspiration["Lesse"]
-#evap_lesse = np.zeros(sens_length)
-#for i in range(100):
-#    evap_lesse[i] = 2
+#evap_lesse = np.zeros(verif_length)
 
 discharge = pd.read_excel(path, 2, header=2)
 discharge_lesse = discharge["Lesse"]
@@ -201,7 +200,7 @@ if sens_analysis:
             E = evap_lesse.iat[t]
             [R, S, Q] = update_timestep(t, P, E, R, S, x_1, x_2, x_3, UH1, UH2)
             total_discharge1[i, t] = Q / 86400 * area * 1000
-            KGE_values[0, i] = KGE(total_discharge1[i,:], discharge_lesse, warmup)
+        KGE_values[0, i] = KGE(total_discharge1[i,:], discharge_lesse, warmup)
             
     for i in range(len(sensx2)):
         x_1 = 350
@@ -215,7 +214,7 @@ if sens_analysis:
             E = evap_lesse.iat[t]
             [R, S, Q] = update_timestep(t, P, E, R, S, x_1, x_2, x_3, UH1, UH2)
             total_discharge2[i, t] = Q / 86400 * area * 1000
-            KGE_values[1, i] = KGE(total_discharge2[i,:], discharge_lesse, warmup)
+        KGE_values[1, i] = KGE(total_discharge2[i,:], discharge_lesse, warmup)
 
     for i in range(len(sensx3)):
         x_1 = 350
@@ -229,7 +228,7 @@ if sens_analysis:
             E = evap_lesse.iat[t]
             [R, S, Q] = update_timestep(t, P, E, R, S, x_1, x_2, x_3, UH1, UH2)
             total_discharge3[i, t] = Q / 86400 * area * 1000
-            KGE_values[2, i] = KGE(total_discharge3[i,:], discharge_lesse, warmup)
+        KGE_values[2, i] = KGE(total_discharge3[i,:], discharge_lesse, warmup)
 
     for i in range(len(sensx4)):
         x_1 = 350
@@ -243,7 +242,7 @@ if sens_analysis:
             E = evap_lesse.iat[t]
             [R, S, Q] = update_timestep(t, P, E, R, S, x_1, x_2, x_3, UH1, UH2)
             total_discharge4[i, t] = Q / 86400 * area * 1000
-            KGE_values[3, i] = KGE(total_discharge4[i,:], discharge_lesse, warmup)
+        KGE_values[3, i] = KGE(total_discharge4[i,:], discharge_lesse, warmup)
 
 elif calibration:
     bestKGE = 0.7
@@ -328,6 +327,8 @@ else:
     print(KGE_value)
     print(RVE_value)
     print(NSE_value)
+    #print(sum(precip_lesse))
+    #print(sum(total_discharge) + R + S)
 
 if sens_analysis:
     np.savetxt("KGE_Values.txt", KGE_values)
