@@ -136,6 +136,7 @@ calibration = False
 warmup = 365
 verif_length = 500
 fout = False
+validation = True
 
 t = 0
 dt = 1
@@ -152,9 +153,15 @@ R = 0
 
 area = 1311
 
-path = os.path.join(os.path.dirname(__file__), "Observed time series 1968-1982.xlsx")
-precipitation = pd.read_excel(path, 0, header=2)
+path1 = os.path.join(os.path.dirname(__file__), "Observed time series 1968-1982.xlsx")
+precipitation = pd.read_excel(path1, 0, header=2)
 precip_lesse = precipitation["Lesse"]
+
+if validation:
+    path2 = os.path.join(os.path.dirname(__file__), "Observed time series 1984-1998.xlsx")
+    precipitation2 = pd.read_excel(path2, 0, header=2)
+    precip_lesse2 = precipitation2["Lesse"]
+
 # Constant precipitation
 #precip_lesse = np.zeros(verif_length)
 #for i in range(100):
@@ -162,14 +169,22 @@ precip_lesse = precipitation["Lesse"]
 precip_total_9 = np.zeros(len(precip_lesse)+12)
 precip_total_1 = np.zeros(len(precip_lesse)+12)
 
-evapotranspiration = pd.read_excel(path, 1, header=2)
+evapotranspiration = pd.read_excel(path1, 1, header=2)
 evap_lesse = evapotranspiration["Lesse"]
+if validation:
+    evapotranspiration2 = pd.read_excel(path2, 1, header=2)
+    evap_lesse2 = evapotranspiration2["Lesse"]
 #evap_lesse = np.zeros(verif_length)
 
-discharge = pd.read_excel(path, 2, header=2)
+discharge = pd.read_excel(path1, 2, header=2)
 discharge_lesse = discharge["Lesse"]
+if validation:
+    discharge2 = pd.read_excel(path2, 2, header=2)
+    discharge_lesse2 = discharge2["Lesse"]
+
 sens_length = len(precip_lesse)
 total_discharge = np.zeros(len(precip_lesse))
+total_discharge_val = np.zeros(len(precip_lesse2))
 total_discharge1 = np.zeros([7, sens_length])
 total_discharge2 = np.zeros([7, sens_length])
 total_discharge3 = np.zeros([7, sens_length])
@@ -313,6 +328,25 @@ elif calibration:
     print(bestx4)
     np.savetxt("Calibrated discharge.txt", bestdischarge)
 
+elif validation:
+    x_1 = 166.1
+    x_2 = -1.57
+    x_3 = 40.3
+    x_4 = 2.26
+    UH1 = fun_UH1(x_4)
+    UH2 = fun_UH2(x_4)
+    for t in range(len(precip_lesse2)):
+        P = precip_lesse2.iat[t]
+        E = evap_lesse2.iat[t]
+        [R, S, Q] = update_timestep(t, P, E, R, S, x_1, x_2, x_3, UH1, UH2)
+        total_discharge_val[t] = Q / 86400 * area * 1000
+    KGE_value = KGE(total_discharge_val, discharge_lesse2, warmup)
+    RVE_value = RVE(total_discharge_val, discharge_lesse2, warmup)
+    NSE_value = NSE(total_discharge_val, discharge_lesse2, warmup)
+    print(KGE_value)
+    print(RVE_value)
+    print(NSE_value)
+
 else:
     UH1 = fun_UH1(x_4)
     UH2 = fun_UH2(x_4)
@@ -348,10 +382,20 @@ elif calibration:
     plt.ylabel("Discharge (m^3/s)")
     plt.xlabel("Time (Days)")
     plt.legend(["Measured", "Simulated"])
-else:
-    plt.plot(discharge_lesse)
-    plt.plot(total_discharge)
+elif validation:
+    plt.plot(discharge_lesse2[warmup:])
+    plt.plot(total_discharge_val)
     plt.ylabel("Discharge (m^3/s)")
     plt.xlabel("Time (Days)")
     plt.legend(["Measured", "Simulated"])
+    plt.title("Measured versus simulated discharge")
+    plt.xlim([warmup, len(discharge_lesse2)])
+else:
+    plt.plot(discharge_lesse[warmup:])
+    plt.plot(total_discharge[warmup:])
+    plt.ylabel("Discharge (m^3/s)")
+    plt.xlabel("Time (Days)")
+    plt.legend(["Measured", "Simulated"])
+    plt.title("Measured versus simulated discharge")
+    plt.xlim([warmup, len(discharge_lesse)])
 plt.show()
