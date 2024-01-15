@@ -126,8 +126,8 @@ x_4 = 2.26
 S = 0
 R = 0
 area = 1311
-start_date = '13-13-2020'                                     
-end_date = '10-7-2021'                                    
+start_date = '2020-12-13'                                     
+end_date = '2021-7-10'                                    
 
 
 df_7_9  = dataimport(os.path.join(os.path.dirname(__file__), "forecasts/2021070900.csv"), 'D')
