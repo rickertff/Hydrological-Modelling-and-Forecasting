@@ -136,7 +136,7 @@ calibration = False
 warmup = 365
 verif_length = 500
 fout = False
-validation = False
+validation = True
 
 t = 0
 dt = 1
@@ -184,13 +184,16 @@ if validation:
 
 sens_length = len(precip_lesse)
 total_discharge = np.zeros(len(precip_lesse))
-if validation:
-    total_discharge_val = np.zeros(len(precip_lesse2))
+total_discharge_val = np.zeros(len(precip_lesse2))
 total_discharge1 = np.zeros([7, sens_length])
 total_discharge2 = np.zeros([7, sens_length])
 total_discharge3 = np.zeros([7, sens_length])
 total_discharge4 = np.zeros([7, sens_length])
 KGE_values = np.zeros([4, 7])
+
+#
+# Calculate Unit Hydrographs
+#
 
 Q_1 = np.zeros([len(precip_lesse), len(precip_lesse)+12])
 Q_9 = np.zeros([len(precip_lesse), len(precip_lesse)+12])
@@ -360,7 +363,6 @@ else:
     print(NSE_value)
     #print(sum(precip_lesse))
     #print(sum(total_discharge) + R + S)
-    #np.savetxt("Simulated series.txt", total_discharge)
 
 if sens_analysis:
     np.savetxt("KGE_Values.txt", KGE_values)
@@ -390,7 +392,7 @@ elif validation:
     plt.xlim([warmup, len(discharge_lesse2)])
 else:
     plt.plot(discharge_lesse[warmup:])
-    plt.plot(total_discharge)
+    plt.plot(total_discharge[warmup:])
     plt.ylabel("Discharge (m^3/s)")
     plt.xlabel("Time (Days)")
     plt.legend(["Measured", "Simulated"])
