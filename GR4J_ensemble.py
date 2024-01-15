@@ -112,18 +112,23 @@ S = 0
 R = 0
 area = 1311
 
-path1 = os.path.join(os.path.dirname(__file__), "Observed time series 1968-1982.xlsx")
-precipitation = pd.read_excel(path1, 0, header=2)
+path = os.path.join(os.path.dirname(__file__), "Observed time series 1968-1982.xlsx")
+precipitation = pd.read_excel(path, 0, header=2)
 precip_lesse = precipitation["Lesse"]
 precip_total_9 = np.zeros(len(precip_lesse)+12)
 precip_total_1 = np.zeros(len(precip_lesse)+12)
 
-evapotranspiration = pd.read_excel(path1, 1, header=2)
+evapotranspiration = pd.read_excel(path, 1, header=2)
 evap_lesse = evapotranspiration["Lesse"]
 
-#evap_lesse = np.zeros(verif_length)
+df_7_9  = pd.read_csv(os.path.join(os.path.dirname(__file__), "forecasts/2021070900.csv"), sep=';', skiprows=2)
+df_7_10 = pd.read_csv(os.path.join(os.path.dirname(__file__), "forecasts/2021071000.csv"), sep=';', skiprows=2)
+df_7_11 = pd.read_csv(os.path.join(os.path.dirname(__file__), "forecasts/2021071100.csv"), sep=';', skiprows=2)
+df_7_12 = pd.read_csv(os.path.join(os.path.dirname(__file__), "forecasts/2021071200.csv"), sep=';', skiprows=2)
+df_7_13 = pd.read_csv(os.path.join(os.path.dirname(__file__), "forecasts/2021071300.csv"), sep=';', skiprows=2)
+df_7_14 = pd.read_csv(os.path.join(os.path.dirname(__file__), "forecasts/2021071400.csv"), sep=';', skiprows=2)
 
-discharge = pd.read_excel(path1, 2, header=2)
+discharge = pd.read_excel(path, 2, header=2)
 discharge_lesse = discharge["Lesse"]
 total_discharge = np.zeros(len(precip_lesse))
 
