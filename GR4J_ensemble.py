@@ -23,7 +23,7 @@ def dataimport(path, interval):
     # Calculate respective output values based on input parameters, by using interval.
     output = df.groupby(pd.PeriodIndex(df['date'], freq=interval))[df.columns[1:]].sum()
     output = output[output.index > output.index[0]]
-    print(output)
+    #print(output)
     return output
 
 def update_timestep(t, P, E, R, S, x_1, x_2, x_3, UH1, UH2):
@@ -116,18 +116,18 @@ def fun_UH2(x_4):
 #
 # Init
 #
-warmup = 0
-forecast = 10
+warmup = 170
 t = 0
 dt = 1
 x_1 = 166.1
 x_2 = -1.57
 x_3 = 40.3
-x_4 = 2.26
+x_4 = 1.5
 S = 0
 R = 0
 area = 1311
 
+plotprocess = True
 
 df_7_9  = dataimport(os.path.join(os.path.dirname(__file__), "forecasts/2021070900.csv"), 'D')
 df_7_10 = dataimport(os.path.join(os.path.dirname(__file__), "forecasts/2021071000.csv"), 'D')
@@ -136,21 +136,22 @@ df_7_12 = dataimport(os.path.join(os.path.dirname(__file__), "forecasts/20210712
 df_7_13 = dataimport(os.path.join(os.path.dirname(__file__), "forecasts/2021071300.csv"), 'D')
 df_7_14 = dataimport(os.path.join(os.path.dirname(__file__), "forecasts/2021071400.csv"), 'D')
 deterministic = pd.read_excel(os.path.join(os.path.dirname(__file__), "forecasts/as5.xlsx"), 2, header=0)
-observed_P = pd.read_excel(os.path.join(os.path.dirname(__file__), "forecasts/as5.xlsx"), 3, header=0)
-observed_Q = pd.read_excel(os.path.join(os.path.dirname(__file__), "forecasts/as5.xlsx"), 5, header=0)
+observed_P = pd.read_excel(os.path.join(os.path.dirname(__file__), "forecasts/as5.xlsx"), 4, header=0)
+observed_Q = pd.read_excel(os.path.join(os.path.dirname(__file__), "forecasts/as5.xlsx"), 6, header=0)
 
-evapotranspiration = np.zeros(len(observed_P)+forecast)
-total_discharge = np.zeros(len(observed_P)+forecast)
+evap_lesse = observed_P["Evaporation"]
 
-precip_total_9 = np.zeros(len(observed_P)+12+forecast)
-precip_total_1 = np.zeros(len(observed_P)+12+forecast)
+total_discharge = np.zeros(len(observed_P))
+
+precip_total_9 = np.zeros(len(observed_P)+12)
+precip_total_1 = np.zeros(len(observed_P)+12)
 
 #
 # Calculate Unit Hydrographs
 #
 
-Q_1 = np.zeros([len(precip_lesse), len(precip_lesse)+12])
-Q_9 = np.zeros([len(precip_lesse), len(precip_lesse)+12])
+Q_1 = np.zeros([len(observed_P), len(observed_P)+12])
+Q_9 = np.zeros([len(observed_P), len(observed_P)+12])
 
 #
 # Main
@@ -158,20 +159,20 @@ Q_9 = np.zeros([len(precip_lesse), len(precip_lesse)+12])
  
 UH1 = fun_UH1(x_4)
 UH2 = fun_UH2(x_4)
-for t in range(len(precip_lesse)):
-    P = precip_lesse.iat[t]
+for t in range(len(observed_P)):#208):
+    P = observed_P.iat[t, 1]
     E = evap_lesse.iat[t]
     [R, S, Q] = update_timestep(t, P, E, R, S, x_1, x_2, x_3, UH1, UH2)
     total_discharge[t] = Q / 86400 * area * 1000
 
 if plotprocess == True:
-    plt.plot(discharge_lesse[warmup:])
-    plt.plot(total_discharge)
+    plt.plot(observed_P["Date"], total_discharge)
+    plt.plot(observed_Q["Date"], observed_Q["Q"])
     plt.ylabel("Discharge (m^3/s)")
     plt.xlabel("Time (Days)")
-    plt.legend(["Measured", "Simulated"])
-    plt.title("Measured versus simulated discharge")
-    plt.xlim([warmup, len(discharge_lesse)])
+    plt.legend(["Simulated", "Measured"])
+    plt.title("Forecast")
+    #plt.xlim([warmup, len(observed_P)])
     plt.show()
 else: 
     print("done")
