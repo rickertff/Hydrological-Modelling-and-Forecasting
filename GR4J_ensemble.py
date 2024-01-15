@@ -11,6 +11,21 @@ import matplotlib.pyplot as plt
 # Functions
 #
 
+def dataimport(path, interval):                        
+    # Read out the CSV, define index and datacolumn
+    df = pd.read_csv(path, header=0, index_col=None, skiprows=2, delimiter=",", parse_dates=[0], skipinitialspace=True)          
+    # Convert indexcolumn to datetime format                                                                                
+    df['date'] = pd.to_datetime(df['date'], format='%d-%m-%Y %H:%M',errors='coerce', utc=True)      
+    # Drop NAN's                                   
+    #df.dropna(subset=['date'], inplace=True) 
+    # Convert DataFrame to floats (otherwise errors occur)                                                                                 
+    #df = pd.to_numeric(df, downcast="float")                                                                  
+    # Calculate respective output values based on input parameters, by using interval.
+    output = df.groupby(pd.PeriodIndex(df['date'], freq=interval))[df.columns[1:]].sum()
+    output = output[output.index > output.index[0]]
+    print(output)
+    return output
+
 def update_timestep(t, P, E, R, S, x_1, x_2, x_3, UH1, UH2):
     """
     This function calculates the new water balance according to the equations.
@@ -101,6 +116,7 @@ def fun_UH2(x_4):
 #
 # Init
 #
+plotprocess = False
 warmup = 365
 t = 0
 dt = 1
@@ -121,12 +137,12 @@ precip_total_1 = np.zeros(len(precip_lesse)+12)
 evapotranspiration = pd.read_excel(path, 1, header=2)
 evap_lesse = evapotranspiration["Lesse"]
 
-df_7_9  = pd.read_csv(os.path.join(os.path.dirname(__file__), "forecasts/2021070900.csv"), sep=';', skiprows=2)
-df_7_10 = pd.read_csv(os.path.join(os.path.dirname(__file__), "forecasts/2021071000.csv"), sep=';', skiprows=2)
-df_7_11 = pd.read_csv(os.path.join(os.path.dirname(__file__), "forecasts/2021071100.csv"), sep=';', skiprows=2)
-df_7_12 = pd.read_csv(os.path.join(os.path.dirname(__file__), "forecasts/2021071200.csv"), sep=';', skiprows=2)
-df_7_13 = pd.read_csv(os.path.join(os.path.dirname(__file__), "forecasts/2021071300.csv"), sep=';', skiprows=2)
-df_7_14 = pd.read_csv(os.path.join(os.path.dirname(__file__), "forecasts/2021071400.csv"), sep=';', skiprows=2)
+df_7_9  = dataimport(os.path.join(os.path.dirname(__file__), "forecasts/2021070900.csv"), 'D')
+df_7_10 = dataimport(os.path.join(os.path.dirname(__file__), "forecasts/2021071000.csv"), 'D')
+df_7_11 = dataimport(os.path.join(os.path.dirname(__file__), "forecasts/2021071100.csv"), 'D')
+df_7_12 = dataimport(os.path.join(os.path.dirname(__file__), "forecasts/2021071200.csv"), 'D')
+df_7_13 = dataimport(os.path.join(os.path.dirname(__file__), "forecasts/2021071300.csv"), 'D')
+df_7_14 = dataimport(os.path.join(os.path.dirname(__file__), "forecasts/2021071400.csv"), 'D')
 
 discharge = pd.read_excel(path, 2, header=2)
 discharge_lesse = discharge["Lesse"]
@@ -151,11 +167,14 @@ for t in range(len(precip_lesse)):
     [R, S, Q] = update_timestep(t, P, E, R, S, x_1, x_2, x_3, UH1, UH2)
     total_discharge[t] = Q / 86400 * area * 1000
 
-plt.plot(discharge_lesse[warmup:])
-plt.plot(total_discharge)
-plt.ylabel("Discharge (m^3/s)")
-plt.xlabel("Time (Days)")
-plt.legend(["Measured", "Simulated"])
-plt.title("Measured versus simulated discharge")
-plt.xlim([warmup, len(discharge_lesse)])
-plt.show()
+if plotprocess == True:
+    plt.plot(discharge_lesse[warmup:])
+    plt.plot(total_discharge)
+    plt.ylabel("Discharge (m^3/s)")
+    plt.xlabel("Time (Days)")
+    plt.legend(["Measured", "Simulated"])
+    plt.title("Measured versus simulated discharge")
+    plt.xlim([warmup, len(discharge_lesse)])
+    plt.show()
+else: 
+    print("done")
