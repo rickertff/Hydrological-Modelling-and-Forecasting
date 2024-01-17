@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 def dataimport(path, interval):                        
     # Read out the CSV, define index and datacolumn
     df = pd.read_csv(path, header=0, index_col=None, skiprows=2, delimiter=",", parse_dates=[0], skipinitialspace=True, dayfirst=True)          
-    # Convert indexcolumn to datetime format                                                                                
+    # Convert indexcolumn to datetime format                                                                            
     df['date'] = pd.to_datetime(df['date'], format='%d-%m-%Y %H:%M',errors='coerce', utc=True, dayfirst=True)      
     # Drop NAN's                                   
     #df.dropna(subset=['date'], inplace=True) 
@@ -20,6 +20,20 @@ def dataimport(path, interval):
     output = df.groupby(pd.PeriodIndex(df['date'], freq=interval))[df.columns[1:]].sum()
     output = output[output.index > output.index[0]]
     return output
+
+def ensemble(df):
+    date_range = pd.date_range(start=start_date, end=end_date, freq='D')
+    E = pd.Series(3.0, index=date_range, name='Evaporation')
+    UH1 = fun_UH1(x_4)
+    UH2 = fun_UH2(x_4)
+    for column_name in df.columns:
+        P = df[column_name]
+        for t in range(len(observed_P)):
+            P = P[t]
+            E = E[t]
+            [R, S, Q] = update_timestep(t, P, E, R, S, x_1, x_2, x_3, UH1, UH2)
+            total_discharge[t] = Q / 86400 * area * 1000
+            
 
 def update_timestep(t, P, E, R, S, x_1, x_2, x_3, UH1, UH2):
     """
@@ -122,10 +136,9 @@ x_4 = 1.5
 S = 0
 R = 0
 area = 1311
-start_date = '2020-12-13'   
-#start_date = '13-12-2020'                                  
+start_date = '2020-12-13'                                 
 end_date = '2021-07-10'  
-#end_date = '10-07-2021'                                  
+
 
 plotprocess = False
 
@@ -136,13 +149,19 @@ df_7_12 = dataimport(os.path.join(os.path.dirname(__file__), "forecasts/20210712
 df_7_13 = dataimport(os.path.join(os.path.dirname(__file__), "forecasts/2021071300.csv"), 'D')
 df_7_14 = dataimport(os.path.join(os.path.dirname(__file__), "forecasts/2021071400.csv"), 'D')
 deterministic = pd.read_excel(os.path.join(os.path.dirname(__file__), "forecasts/as5.xlsx"), 2, header=0, index_col=None, parse_dates=[0])
-observed_P = pd.read_excel(os.path.join(os.path.dirname(__file__), "forecasts/as5.xlsx", ), 4, header=0, index_col=None) 
 
-observed_P['Date'] = pd.to_datetime(observed_P['Date'], format='%Y-%m-%d', errors='coerce', utc=True) 
-observed_P.set_index('Date', inplace=True)
+observed_P = pd.read_excel(os.path.join(os.path.dirname(__file__), "forecasts/as5.xlsx", ), 4, header=0, index_col=None) 
+observed_P.rename(columns={'Lesse': 'Precipitation'}, inplace=True)
+observed_P.rename(columns={'Date': 'date'}, inplace=True)
+observed_P['date'] = pd.to_datetime(observed_P['date'], format='%Y-%m-%d', errors='coerce', utc=True) 
+observed_P.set_index('date', inplace=True)
 observed_P = observed_P.loc[start_date:end_date]
-output= pd.concat([observed_P, df_7_11.iloc[:, 1]])
-print(output)
+df_7_11.rename(columns={'2': 'P_Observed'}, inplace=True)
+
+ensemble(df_7_10)
+selection = df_7_11.iloc[:, 1]
+
+
 observed_Q = pd.read_excel(os.path.join(os.path.dirname(__file__), "forecasts/as5.xlsx"), 6, header=0)
 
 
@@ -165,13 +184,13 @@ Q_9 = np.zeros([len(observed_P), len(observed_P)+12])
 # Main
 #
  
-UH1 = fun_UH1(x_4)
-UH2 = fun_UH2(x_4)
-for t in range(len(observed_P)):
-    P = observed_P.iat[t]
-    E = evap_lesse.iat[t]
-    [R, S, Q] = update_timestep(t, P, E, R, S, x_1, x_2, x_3, UH1, UH2)
-    total_discharge[t] = Q / 86400 * area * 1000
+# UH1 = fun_UH1(x_4)
+# UH2 = fun_UH2(x_4)
+# for t in range(len(observed_P)):
+#     P = observed_P.iat[t]
+#     E = evap_lesse.iat[t]
+#     [R, S, Q] = update_timestep(t, P, E, R, S, x_1, x_2, x_3, UH1, UH2)
+#     total_discharge[t] = Q / 86400 * area * 1000
 
 if plotprocess == True:
     plt.plot(observed_P["Date"], total_discharge)
