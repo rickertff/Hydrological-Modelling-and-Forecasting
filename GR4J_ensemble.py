@@ -1,7 +1,3 @@
-#
-# https://doi.org/10.1016/S0022-1694(03)00225-7
-#
-
 import numpy as np
 import pandas as pd
 import os
@@ -13,9 +9,9 @@ import matplotlib.pyplot as plt
 
 def dataimport(path, interval):                        
     # Read out the CSV, define index and datacolumn
-    df = pd.read_csv(path, header=0, index_col=None, skiprows=2, delimiter=",", parse_dates=[0], skipinitialspace=True)          
+    df = pd.read_csv(path, header=0, index_col=None, skiprows=2, delimiter=",", parse_dates=[0], skipinitialspace=True, dayfirst=True)          
     # Convert indexcolumn to datetime format                                                                                
-    df['date'] = pd.to_datetime(df['date'], format='%d-%m-%Y %H:%M',errors='coerce', utc=True)      
+    df['date'] = pd.to_datetime(df['date'], format='%d-%m-%Y %H:%M',errors='coerce', utc=True, dayfirst=True)      
     # Drop NAN's                                   
     #df.dropna(subset=['date'], inplace=True) 
     # Convert DataFrame to floats (otherwise errors occur)                                                                                 
@@ -23,7 +19,6 @@ def dataimport(path, interval):
     # Calculate respective output values based on input parameters, by using interval.
     output = df.groupby(pd.PeriodIndex(df['date'], freq=interval))[df.columns[1:]].sum()
     output = output[output.index > output.index[0]]
-    #print(output)
     return output
 
 def update_timestep(t, P, E, R, S, x_1, x_2, x_3, UH1, UH2):
@@ -116,7 +111,8 @@ def fun_UH2(x_4):
 #
 # Init
 #
-warmup = 170
+warmup = 0
+forecast = 10
 t = 0
 dt = 1
 x_1 = 166.1
@@ -126,8 +122,12 @@ x_4 = 1.5
 S = 0
 R = 0
 area = 1311
+start_date = '2020-12-13'   
+#start_date = '13-12-2020'                                  
+end_date = '2021-07-10'  
+#end_date = '10-07-2021'                                  
 
-plotprocess = True
+plotprocess = False
 
 df_7_9  = dataimport(os.path.join(os.path.dirname(__file__), "forecasts/2021070900.csv"), 'D')
 df_7_10 = dataimport(os.path.join(os.path.dirname(__file__), "forecasts/2021071000.csv"), 'D')
@@ -135,21 +135,29 @@ df_7_11 = dataimport(os.path.join(os.path.dirname(__file__), "forecasts/20210711
 df_7_12 = dataimport(os.path.join(os.path.dirname(__file__), "forecasts/2021071200.csv"), 'D')
 df_7_13 = dataimport(os.path.join(os.path.dirname(__file__), "forecasts/2021071300.csv"), 'D')
 df_7_14 = dataimport(os.path.join(os.path.dirname(__file__), "forecasts/2021071400.csv"), 'D')
-deterministic = pd.read_excel(os.path.join(os.path.dirname(__file__), "forecasts/as5.xlsx"), 2, header=0)
-observed_P = pd.read_excel(os.path.join(os.path.dirname(__file__), "forecasts/as5.xlsx"), 4, header=0)
+deterministic = pd.read_excel(os.path.join(os.path.dirname(__file__), "forecasts/as5.xlsx"), 2, header=0, index_col=None, parse_dates=[0])
+observed_P = pd.read_excel(os.path.join(os.path.dirname(__file__), "forecasts/as5.xlsx", ), 4, header=0, index_col=None) 
+
+observed_P['Date'] = pd.to_datetime(observed_P['Date'], format='%Y-%m-%d', errors='coerce', utc=True) 
+observed_P.set_index('Date', inplace=True)
+observed_P = observed_P.loc[start_date:end_date]
+output= pd.concat([observed_P, df_7_11.iloc[:, 1]])
+print(output)
 observed_Q = pd.read_excel(os.path.join(os.path.dirname(__file__), "forecasts/as5.xlsx"), 6, header=0)
+
+
+#print(observed_P)
 
 evap_lesse = observed_P["Evaporation"]
 
 total_discharge = np.zeros(len(observed_P))
 
-precip_total_9 = np.zeros(len(observed_P)+12)
 precip_total_1 = np.zeros(len(observed_P)+12)
+precip_total_9 = np.zeros(len(observed_P)+12)
 
 #
 # Calculate Unit Hydrographs
 #
-
 Q_1 = np.zeros([len(observed_P), len(observed_P)+12])
 Q_9 = np.zeros([len(observed_P), len(observed_P)+12])
 
@@ -159,8 +167,8 @@ Q_9 = np.zeros([len(observed_P), len(observed_P)+12])
  
 UH1 = fun_UH1(x_4)
 UH2 = fun_UH2(x_4)
-for t in range(len(observed_P)):#208):
-    P = observed_P.iat[t, 1]
+for t in range(len(observed_P)):
+    P = observed_P.iat[t]
     E = evap_lesse.iat[t]
     [R, S, Q] = update_timestep(t, P, E, R, S, x_1, x_2, x_3, UH1, UH2)
     total_discharge[t] = Q / 86400 * area * 1000
@@ -172,7 +180,7 @@ if plotprocess == True:
     plt.xlabel("Time (Days)")
     plt.legend(["Simulated", "Measured"])
     plt.title("Forecast")
-    #plt.xlim([warmup, len(observed_P)])
+    #plt.xlim([warmup, len(discharge_lesse)])
     plt.show()
 else: 
     print("done")
