@@ -21,8 +21,8 @@ def dataimport(path, interval):
     output = output[output.index > output.index[0]]
     return output
 
-def ensemble(df):
-    date_range = pd.date_range(start=start_date, end=end_date, freq='D')
+def ensemble(df, date):
+    date_range = pd.date_range(start=date, end=end_date, freq='D')
     E = pd.Series(3.0, index=date_range, name='Evaporation')
     UH1 = fun_UH1(x_4)
     UH2 = fun_UH2(x_4)
@@ -184,7 +184,7 @@ precip_total_9 = np.zeros(len(observed_P)+12)
 
 Q_1 = np.zeros([len(observed_P), len(observed_P)+12])
 Q_9 = np.zeros([len(observed_P), len(observed_P)+12])
-ensemble(df_7_10)
+ensemble(df_7_10, "2021-07-10")
 
 
 if plotprocess == True:
