@@ -159,9 +159,9 @@ S = 0
 R = 0
 area = 1311
 start_date = '2020-12-13'
-end_date = '2021-07-09'
+end_date = '2021-07-20'
 warmup = '2021-06-01'
-forecast = '2021-07-19'
+forecast = '2021-07-30'
 
 
 plotprocess = True
@@ -200,7 +200,7 @@ Q_1 = np.zeros([len(observed_P), len(observed_P)+12])
 Q_9 = np.zeros([len(observed_P), len(observed_P)+12])
 
 observed_P = observed_P.loc[start_date:end_date]
-total_discharge = np.zeros(len(observed_P)+10,)
+total_discharge = np.zeros(len(observed_P)+10)
 output = pd.DataFrame(index=range(len(observed_P)+len(df_7_9)))
 deterministic_output = pd.DataFrame(index=range(len(observed_P)+len(df_7_9)))
 observed_Q = observed_Q.loc[:end_date]
@@ -209,7 +209,7 @@ observed_Q = observed_Q.loc[:end_date]
 # Main
 #
 
-ensemble(df_7_9, deter_10, observed_P, R, S, x_1, x_2, x_3, x_4)
+ensemble(df_7_14, deter_21, observed_P, R, S, x_1, x_2, x_3, x_4)
 
 # UH1 = fun_UH1(x_4)
 # UH2 = fun_UH2(x_4)
@@ -220,16 +220,21 @@ ensemble(df_7_9, deter_10, observed_P, R, S, x_1, x_2, x_3, x_4)
 #     total_discharge[t] = Q / 86400 * area * 1000
 
 if plotprocess == True:
-    plt.plot(pd.date_range(start=start_date, end=forecast, freq='D'), output, linewidth=0.2, color='b', alpha=0.5)
-    plt.plot(pd.date_range(start=start_date, end=forecast, freq='D'), deterministic_output, linewidth=0.5, color='r', alpha=1)
+    fig, ax = plt.subplots()
     plt.plot(observed_Q.index, observed_Q["Q"], 'g')
-    plt.vlines(datetime.date(2021, 7, 9), 0, 60, 'r', ':')
+    plt.plot(pd.date_range(start=start_date, end=forecast, freq='D'), deterministic_output, linewidth=0.6, color='r', alpha=1)
+    #plt.plot(pd.date_range(start=start_date, end=forecast, freq='D'), output, linewidth=0.2, color='b', alpha=0.5)
+    plt.vlines(datetime.date(2021, 7, 20), 0, 510, 'r', ':')
     plt.ylabel("Discharge (m^3/s)")
     plt.xlabel("Time (Days)")
-    #plt.legend(["Simulated", "Measured"])
-    plt.title("Forecast")
-    plt.xlim([datetime.date(2021, 7, 4), datetime.date(2021, 7, 19)])
-    plt.ylim([0, 60])
+    plt.legend(["Observed discharge", "Deterministic forecast"])#, "Ensemble members"])
+    plt.title("Forecast July 20")
+    ax.grid(axis="y", which="both", alpha=0.2)
+    ax.minorticks_on()
+    ax.grid(axis="x", which="major", alpha=0.2)
+    ax.set_axisbelow(True)
+    plt.xlim([datetime.date(2021, 7, 16), datetime.date(2021, 7, 30)])
+    plt.ylim([0, 510])
     plt.show()
 else: 
     print("done")
