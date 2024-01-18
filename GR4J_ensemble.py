@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import os
 import matplotlib.pyplot as plt
+import datetime
 
 #
 # Functions
@@ -18,21 +19,27 @@ def dataimport(path, interval):
     #df = pd.to_numeric(df, downcast="float")                                                                  
     # Calculate respective output values based on input parameters, by using interval.
     output = df.groupby(pd.PeriodIndex(df['date'], freq=interval))[df.columns[1:]].sum()
-    output = output[output.index > output.index[0]]
     return output
 
-def ensemble(df):
-    date_range = pd.date_range(start=start_date, end=end_date, freq='D')
-    E = pd.Series(3.0, index=date_range, name='Evaporation')
+def ensemble(df, observed_P, R, S, x_1, x_2, x_3, x_4):
     UH1 = fun_UH1(x_4)
     UH2 = fun_UH2(x_4)
+    counter = 0
     for column_name in df.columns:
-        P = df[column_name]
+        P_ensemble = df[column_name]
         for t in range(len(observed_P)):
-            P = P[t]
-            E = E[t]
+            P = observed_P.iat[t, 0]
+            E = observed_P.iat[t, 1]
             [R, S, Q] = update_timestep(t, P, E, R, S, x_1, x_2, x_3, UH1, UH2)
             total_discharge[t] = Q / 86400 * area * 1000
+        for u in range(len(P_ensemble)):
+            P = P_ensemble.iat[u]
+            E = 3
+            [R, S, Q] = update_timestep(t, P, E, R, S, x_1, x_2, x_3, UH1, UH2)
+            total_discharge[u+t+1] = Q / 86400 * area * 1000
+        counter += 1
+        output[counter] = total_discharge
+        print(counter)
             
 
 def update_timestep(t, P, E, R, S, x_1, x_2, x_3, UH1, UH2):
@@ -125,8 +132,6 @@ def fun_UH2(x_4):
 #
 # Init
 #
-warmup = 0
-forecast = 10
 t = 0
 dt = 1
 x_1 = 166.1
@@ -136,11 +141,13 @@ x_4 = 1.5
 S = 0
 R = 0
 area = 1311
-start_date = '2020-12-13'                                 
-end_date = '2021-07-10'  
+start_date = '2020-12-13'
+end_date = '2021-07-09'
+warmup = '2021-06-01'
+forecast = '2021-07-19'
 
 
-plotprocess = False
+plotprocess = True
 
 df_7_9  = dataimport(os.path.join(os.path.dirname(__file__), "forecasts/2021070900.csv"), 'D')
 df_7_10 = dataimport(os.path.join(os.path.dirname(__file__), "forecasts/2021071000.csv"), 'D')
@@ -150,40 +157,32 @@ df_7_13 = dataimport(os.path.join(os.path.dirname(__file__), "forecasts/20210713
 df_7_14 = dataimport(os.path.join(os.path.dirname(__file__), "forecasts/2021071400.csv"), 'D')
 deterministic = pd.read_excel(os.path.join(os.path.dirname(__file__), "forecasts/as5.xlsx"), 2, header=0, index_col=None, parse_dates=[0])
 
-observed_P = pd.read_excel(os.path.join(os.path.dirname(__file__), "forecasts/as5.xlsx", ), 4, header=0, index_col=None) 
-observed_P.rename(columns={'Lesse': 'Precipitation'}, inplace=True)
-observed_P.rename(columns={'Date': 'date'}, inplace=True)
+observed_P = pd.read_excel(os.path.join(os.path.dirname(__file__), "forecasts/as5.xlsx", ), 4, header=0, index_col=None)
 observed_P['date'] = pd.to_datetime(observed_P['date'], format='%Y-%m-%d', errors='coerce', utc=True) 
 observed_P.set_index('date', inplace=True)
-observed_P = observed_P.loc[start_date:end_date]
-df_7_11.rename(columns={'2': 'P_Observed'}, inplace=True)
+#df_7_11.rename(columns={'2': 'P_Observed'}, inplace=True)
 
-ensemble(df_7_10)
-selection = df_7_11.iloc[:, 1]
-
-
-observed_Q = pd.read_excel(os.path.join(os.path.dirname(__file__), "forecasts/as5.xlsx"), 6, header=0)
-
-
-#print(observed_P)
+observed_Q = pd.read_excel(os.path.join(os.path.dirname(__file__), "forecasts/as5.xlsx"), 6, header=0, index_col=0)
 
 evap_lesse = observed_P["Evaporation"]
-
-total_discharge = np.zeros(len(observed_P))
 
 precip_total_1 = np.zeros(len(observed_P)+12)
 precip_total_9 = np.zeros(len(observed_P)+12)
 
-#
-# Calculate Unit Hydrographs
-#
 Q_1 = np.zeros([len(observed_P), len(observed_P)+12])
 Q_9 = np.zeros([len(observed_P), len(observed_P)+12])
+
+observed_P = observed_P.loc[start_date:end_date]
+total_discharge = np.zeros(len(observed_P)+10,)
+output = pd.DataFrame(index=range(len(observed_P)+len(df_7_9)))
+observed_Q = observed_Q.loc[:end_date]
 
 #
 # Main
 #
- 
+
+ensemble(df_7_9, observed_P, R, S, x_1, x_2, x_3, x_4)
+
 # UH1 = fun_UH1(x_4)
 # UH2 = fun_UH2(x_4)
 # for t in range(len(observed_P)):
@@ -193,13 +192,15 @@ Q_9 = np.zeros([len(observed_P), len(observed_P)+12])
 #     total_discharge[t] = Q / 86400 * area * 1000
 
 if plotprocess == True:
-    plt.plot(observed_P["Date"], total_discharge)
-    plt.plot(observed_Q["Date"], observed_Q["Q"])
+    plt.plot(pd.date_range(start=start_date, end=forecast, freq='D'), output, linewidth=0.2, color='b', alpha=0.5)
+    plt.plot(observed_Q.index, observed_Q["Q"], 'g')
+    plt.vlines(datetime.date(2021, 7, 9), 0, 60, 'r', ':')
     plt.ylabel("Discharge (m^3/s)")
     plt.xlabel("Time (Days)")
-    plt.legend(["Simulated", "Measured"])
+    #plt.legend(["Simulated", "Measured"])
     plt.title("Forecast")
-    #plt.xlim([warmup, len(discharge_lesse)])
+    plt.xlim([datetime.date(2021, 7, 4), datetime.date(2021, 7, 19)])
+    plt.ylim([0, 60])
     plt.show()
 else: 
     print("done")
