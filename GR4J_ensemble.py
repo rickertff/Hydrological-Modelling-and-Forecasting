@@ -26,15 +26,24 @@ def ensemble(df):
     E = pd.Series(3.0, index=date_range, name='Evaporation')
     UH1 = fun_UH1(x_4)
     UH2 = fun_UH2(x_4)
+    Q_total = pd.Series(np.nan, index=range(len(df)), name='')
+    #R_total = pd.Series(np.nan, index=date_range, name='')
+    #S_total = pd.Series(np.nan, index=date_range, name='')
+    i = 0
+    output = pd.DataFrame(index=range(len(df)))
     for column_name in df.columns:
+        i = i + 1
         P = df[column_name]
-        for t in range(len(observed_P)):
-            P = P[t]
-            E = E[t]
-            [R, S, Q] = update_timestep(t, P, E, R, S, x_1, x_2, x_3, UH1, UH2)
-            total_discharge[t] = Q / 86400 * area * 1000
-            
-
+        S = 0
+        R = 0
+        for t in range(len(P)):           
+            P_sel = P.iloc[t]
+            E_sel = E.iloc[t]
+            [R, S, Q] = update_timestep(t, P_sel, E_sel, R, S, x_1, x_2, x_3, UH1, UH2) 
+            Q_total.iloc[t] = Q
+        output[i] = Q_total
+        print(output)
+          
 def update_timestep(t, P, E, R, S, x_1, x_2, x_3, UH1, UH2):
     """
     This function calculates the new water balance according to the equations.
@@ -80,7 +89,7 @@ def update_timestep(t, P, E, R, S, x_1, x_2, x_3, UH1, UH2):
     if Q_r < R:
         R = R - Q_r
     else:
-        print("Hehe dit gaat fout")
+        #print("Hehe dit gaat fout")
         fout = True
         return 0, 0, 0
 
@@ -148,6 +157,7 @@ df_7_11 = dataimport(os.path.join(os.path.dirname(__file__), "forecasts/20210711
 df_7_12 = dataimport(os.path.join(os.path.dirname(__file__), "forecasts/2021071200.csv"), 'D')
 df_7_13 = dataimport(os.path.join(os.path.dirname(__file__), "forecasts/2021071300.csv"), 'D')
 df_7_14 = dataimport(os.path.join(os.path.dirname(__file__), "forecasts/2021071400.csv"), 'D')
+
 deterministic = pd.read_excel(os.path.join(os.path.dirname(__file__), "forecasts/as5.xlsx"), 2, header=0, index_col=None, parse_dates=[0])
 
 observed_P = pd.read_excel(os.path.join(os.path.dirname(__file__), "forecasts/as5.xlsx", ), 4, header=0, index_col=None) 
@@ -158,7 +168,7 @@ observed_P.set_index('date', inplace=True)
 observed_P = observed_P.loc[start_date:end_date]
 df_7_11.rename(columns={'2': 'P_Observed'}, inplace=True)
 
-ensemble(df_7_10)
+
 selection = df_7_11.iloc[:, 1]
 
 
@@ -168,29 +178,14 @@ observed_Q = pd.read_excel(os.path.join(os.path.dirname(__file__), "forecasts/as
 #print(observed_P)
 
 evap_lesse = observed_P["Evaporation"]
-
 total_discharge = np.zeros(len(observed_P))
-
 precip_total_1 = np.zeros(len(observed_P)+12)
 precip_total_9 = np.zeros(len(observed_P)+12)
 
-#
-# Calculate Unit Hydrographs
-#
 Q_1 = np.zeros([len(observed_P), len(observed_P)+12])
 Q_9 = np.zeros([len(observed_P), len(observed_P)+12])
+ensemble(df_7_10)
 
-#
-# Main
-#
- 
-# UH1 = fun_UH1(x_4)
-# UH2 = fun_UH2(x_4)
-# for t in range(len(observed_P)):
-#     P = observed_P.iat[t]
-#     E = evap_lesse.iat[t]
-#     [R, S, Q] = update_timestep(t, P, E, R, S, x_1, x_2, x_3, UH1, UH2)
-#     total_discharge[t] = Q / 86400 * area * 1000
 
 if plotprocess == True:
     plt.plot(observed_P["Date"], total_discharge)
