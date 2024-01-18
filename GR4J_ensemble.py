@@ -87,7 +87,7 @@ def update_timestep(t, P, E, R, S, x_1, x_2, x_3, UH1, UH2):
     if Q_r < R:
         R = R - Q_r
     else:
-        print("Hehe dit gaat fout")
+        #print("Hehe dit gaat fout")
         fout = True
         return 0, 0, 0
 
@@ -155,6 +155,7 @@ df_7_11 = dataimport(os.path.join(os.path.dirname(__file__), "forecasts/20210711
 df_7_12 = dataimport(os.path.join(os.path.dirname(__file__), "forecasts/2021071200.csv"), 'D')
 df_7_13 = dataimport(os.path.join(os.path.dirname(__file__), "forecasts/2021071300.csv"), 'D')
 df_7_14 = dataimport(os.path.join(os.path.dirname(__file__), "forecasts/2021071400.csv"), 'D')
+
 deterministic = pd.read_excel(os.path.join(os.path.dirname(__file__), "forecasts/as5.xlsx"), 2, header=0, index_col=None, parse_dates=[0])
 
 observed_P = pd.read_excel(os.path.join(os.path.dirname(__file__), "forecasts/as5.xlsx", ), 4, header=0, index_col=None)
@@ -171,6 +172,7 @@ precip_total_9 = np.zeros(len(observed_P)+12)
 
 Q_1 = np.zeros([len(observed_P), len(observed_P)+12])
 Q_9 = np.zeros([len(observed_P), len(observed_P)+12])
+ensemble(df_7_10, "2021-07-10")
 
 observed_P = observed_P.loc[start_date:end_date]
 total_discharge = np.zeros(len(observed_P)+10,)
