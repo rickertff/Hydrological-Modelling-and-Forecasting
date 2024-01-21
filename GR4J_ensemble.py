@@ -37,7 +37,7 @@ def ensemble(df, deterministic, observed_P, R, S, x_1, x_2, x_3, x_4):
         for u in range(len(P_ensemble)):
             P = P_ensemble.iat[u]
             E = 3
-            [R, S, Q] = update_timestep(t, P, E, R, S, x_1, x_2, x_3, UH1, UH2)
+            [R, S, Q] = update_timestep(u+t+1, P, E, R, S, x_1, x_2, x_3, UH1, UH2)
             total_discharge[u+t+1] = Q / 86400 * area * 1000
         counter += 1
         output[counter] = total_discharge
@@ -53,7 +53,7 @@ def ensemble(df, deterministic, observed_P, R, S, x_1, x_2, x_3, x_4):
     for u in range(len(P_ensemble)):
         P = deterministic.iat[u, 0]
         E = 3
-        [R, S, Q] = update_timestep(t, P, E, R, S, x_1, x_2, x_3, UH1, UH2)
+        [R, S, Q] = update_timestep(u+t+1, P, E, R, S, x_1, x_2, x_3, UH1, UH2)
         total_discharge[u+t+1] = Q / 86400 * area * 1000
     counter += 1
     deterministic_output[counter] = total_discharge
@@ -159,9 +159,9 @@ S = 0
 R = 0
 area = 1311
 start_date = '2020-12-13'
-end_date = '2021-07-20'
+end_date = '2021-07-9'
 warmup = '2021-06-01'
-forecast = '2021-07-30'
+forecast = '2021-07-19'
 
 
 plotprocess = True
@@ -209,7 +209,7 @@ observed_Q = observed_Q.loc[:end_date]
 # Main
 #
 
-ensemble(df_7_14, deter_21, observed_P, R, S, x_1, x_2, x_3, x_4)
+ensemble(df_7_9, deter_10, observed_P, R, S, x_1, x_2, x_3, x_4)
 
 # UH1 = fun_UH1(x_4)
 # UH2 = fun_UH2(x_4)
@@ -223,17 +223,17 @@ if plotprocess == True:
     fig, ax = plt.subplots()
     plt.plot(observed_Q.index, observed_Q["Q"], 'g')
     plt.plot(pd.date_range(start=start_date, end=forecast, freq='D'), deterministic_output, linewidth=0.6, color='r', alpha=1)
-    #plt.plot(pd.date_range(start=start_date, end=forecast, freq='D'), output, linewidth=0.2, color='b', alpha=0.5)
-    plt.vlines(datetime.date(2021, 7, 20), 0, 510, 'r', ':')
+    plt.plot(pd.date_range(start=start_date, end=forecast, freq='D'), output, linewidth=0.2, color='b', alpha=0.5)
+    plt.vlines(datetime.date(2021, 7, 9), 0, 510, 'r', ':')
     plt.ylabel("Discharge (m^3/s)")
     plt.xlabel("Time (Days)")
-    plt.legend(["Observed discharge", "Deterministic forecast"])#, "Ensemble members"])
-    plt.title("Forecast July 20")
+    plt.legend(["Observed discharge", "Deterministic forecast", "Ensemble members"])
+    plt.title("Forecast July 9")
     ax.grid(axis="y", which="both", alpha=0.2)
     ax.minorticks_on()
     ax.grid(axis="x", which="major", alpha=0.2)
     ax.set_axisbelow(True)
-    plt.xlim([datetime.date(2021, 7, 16), datetime.date(2021, 7, 30)])
+    plt.xlim([datetime.date(2021, 7, 4), datetime.date(2021, 7, 19)])
     plt.ylim([0, 510])
     plt.show()
 else: 
