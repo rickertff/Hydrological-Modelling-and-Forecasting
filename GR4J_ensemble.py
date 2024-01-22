@@ -18,7 +18,7 @@ def dataimport(path, interval, skiprows):
     # Convert DataFrame to floats (otherwise errors occur)                                                                                 
     #df = pd.to_numeric(df, downcast="float")                                                                  
     # Calculate respective output values based on input parameters, by using interval.
-    output = df.groupby(pd.PeriodIndex(df['date'], freq=interval))[df.columns[1:]].sum()
+    output = df.groupby(pd.PeriodIndex(df['date'], freq=interval))[df.columns[2:]].sum()
     return output
 
 def ensemble(df, deterministic, observed_P, R, S, x_1, x_2, x_3, x_4):
@@ -220,10 +220,15 @@ ensemble(df_7_9, deter_10, observed_P, R, S, x_1, x_2, x_3, x_4)
 #     total_discharge[t] = Q / 86400 * area * 1000
 
 if plotprocess == True:
+    max_values = output.max(axis=1)
+    min_values = output.min(axis=1)
+    diff_values = max_values-min_values
+    print(diff_values.max(axis=0))
     fig, ax = plt.subplots()
     plt.plot(observed_Q.index, observed_Q["Q"], 'g')
     plt.plot(pd.date_range(start=start_date, end=forecast, freq='D'), deterministic_output, linewidth=0.6, color='r', alpha=1)
-    plt.plot(pd.date_range(start=start_date, end=forecast, freq='D'), output, linewidth=0.2, color='b', alpha=0.5)
+    plt.plot(pd.date_range(start=start_date, end=forecast, freq='D'), output, linewidth=0.2, color='b', alpha=0.4)
+    plt.fill_between(pd.date_range(start=start_date, end=forecast, freq='D'), min_values, max_values, color='b', alpha=0.2, label='Flume')
     plt.vlines(datetime.date(2021, 7, 9), 0, 510, 'r', ':')
     plt.ylabel("Discharge (m^3/s)")
     plt.xlabel("Time (Days)")
@@ -236,5 +241,6 @@ if plotprocess == True:
     plt.xlim([datetime.date(2021, 7, 4), datetime.date(2021, 7, 19)])
     plt.ylim([0, 510])
     plt.show()
+    
 else: 
     print("done")
