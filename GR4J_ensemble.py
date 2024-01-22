@@ -241,6 +241,7 @@ if plotprocess == True:
     plt.xlim([datetime.date(2021, 7, 4), datetime.date(2021, 7, 19)])
     plt.ylim([0, 510])
     plt.show()
-    
-else: 
+else:
+    np.savetxt("resultaten\\output.txt", output)
+    np.savetxt("resultaten\\det_output.txt", deterministic_output)
     print("done")
